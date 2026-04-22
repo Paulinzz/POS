@@ -50,19 +50,29 @@ class TransparenciaService:
                 return response.json(), ""
             elif response.status_code == 401:
                 return None, "Chave de API inválida ou sem permissão."
+            elif response.status_code == 403:
+                try:
+                    corpo = response.json()
+                    detalhe = corpo.get("message") or corpo.get("mensagem") or corpo.get("error") or str(corpo)
+                except Exception:
+                    detalhe = response.text[:200] if response.text else "sem detalhes"
+                return None, f"Acesso negado (403): {detalhe}"
             elif response.status_code == 404:
                 return None, "Nenhum registro encontrado."
             elif response.status_code == 429:
                 return None, "Limite de requisições atingido. Tente novamente em instantes."
             else:
-                return None, f"Erro HTTP {response.status_code}."
+                try:
+                    corpo = response.json()
+                    detalhe = corpo.get("message") or corpo.get("mensagem") or str(corpo)
+                except Exception:
+                    detalhe = response.text[:200] if response.text else "sem detalhes"
+                return None, f"Erro HTTP {response.status_code}: {detalhe}"
         except httpx.TimeoutException:
             return None, "Tempo de resposta excedido."
         except httpx.RequestError as e:
             logger.error(f"Erro de conexão com {url}: {e}")
             return None, "Falha na conexão com o Portal da Transparência."
-
-    # ─── Pessoa Física ────────────────────────────────────────────────────────
 
     async def buscar_pessoa_fisica(self, cpf: str) -> tuple[Optional[DadosPessoais], FonteStatus]:
         dados, erro = await self._get("cpf", {"cpf": cpf, "pagina": 1})
@@ -70,7 +80,6 @@ class TransparenciaService:
         if erro:
             return None, FonteStatus(disponivel=False, mensagem=erro)
 
-        # A API pode retornar lista ou objeto único
         pessoa = dados[0] if isinstance(dados, list) and dados else dados
         if not pessoa:
             return None, FonteStatus(disponivel=True, mensagem="Nenhum dado encontrado.")
@@ -93,8 +102,6 @@ class TransparenciaService:
             situacaoCadastral=pessoa.get("situacaoCadastral"),
         )
         return resultado, FonteStatus(disponivel=True)
-
-    # ─── Viagens ──────────────────────────────────────────────────────────────
 
     async def buscar_viagens(self, cpf: str) -> tuple[ResumoViagens, FonteStatus]:
         dados, erro = await self._get("viagens/passagens-por-cpf", {"cpf": cpf, "pagina": 1})
@@ -144,8 +151,6 @@ class TransparenciaService:
         )
         return resumo, FonteStatus(disponivel=True)
 
-    # ─── PETI ─────────────────────────────────────────────────────────────────
-
     async def buscar_peti(self, cpf: str) -> tuple[ResumoPETI, FonteStatus]:
         dados, erro = await self._get("peti/por-cpf-nis", {"cpfNis": cpf, "pagina": 1})
 
@@ -180,8 +185,6 @@ class TransparenciaService:
             ResumoPETI(encontrado=bool(beneficios), totalRegistros=len(beneficios), registros=beneficios),
             FonteStatus(disponivel=True),
         )
-
-    # ─── BPC ──────────────────────────────────────────────────────────────────
 
     async def buscar_bpc(self, cpf: str) -> tuple[ResumoBPC, FonteStatus]:
         dados, erro = await self._get("bpc/por-cpf-nis", {"cpfNis": cpf, "pagina": 1})
@@ -222,10 +225,7 @@ class TransparenciaService:
             FonteStatus(disponivel=True),
         )
 
-    # ─── Consulta completa ────────────────────────────────────────────────────
-
     async def consulta_completa(self, cpf: str) -> CPFConsultaResponse:
-        # Executa todas as consultas em paralelo
         import asyncio
 
         pessoa_task = self.buscar_pessoa_fisica(cpf)

@@ -1,9 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
-
-# ─── Pessoa Física ─────────────────────────────────────────────────────────────
-
 class Municipio(BaseModel):
     codigoIBGE: Optional[str] = None
     nomeIBGE: Optional[str] = None
@@ -14,7 +11,6 @@ class Municipio(BaseModel):
         if self.nomeIBGE and self.uf:
             return f"{self.nomeIBGE} - {self.uf}"
         return self.nomeIBGE or self.uf
-
 
 class DadosPessoais(BaseModel):
     nome: Optional[str] = Field(None, description="Nome completo")
@@ -29,9 +25,6 @@ class DadosPessoais(BaseModel):
     class Config:
         populate_by_name = True
 
-
-# ─── Viagens ───────────────────────────────────────────────────────────────────
-
 class Viagem(BaseModel):
     id: Optional[str] = None
     numeroProposta: Optional[str] = Field(None, description="Número da proposta")
@@ -45,16 +38,12 @@ class Viagem(BaseModel):
     valorTotal: Optional[float] = Field(None, description="Valor total da viagem (R$)")
     orgao: Optional[str] = Field(None, description="Órgão solicitante")
 
-
 class ResumoViagens(BaseModel):
     totalViagens: int = Field(0, description="Total de viagens realizadas")
     valorTotalPassagens: float = Field(0.0, description="Soma das passagens (R$)")
     valorTotalDiarias: float = Field(0.0, description="Soma das diárias (R$)")
     valorGeral: float = Field(0.0, description="Valor geral gasto em viagens (R$)")
     viagens: List[Viagem] = Field(default_factory=list)
-
-
-# ─── PETI ──────────────────────────────────────────────────────────────────────
 
 class BeneficioPETI(BaseModel):
     nis: Optional[str] = Field(None, description="NIS do beneficiário")
@@ -66,14 +55,10 @@ class BeneficioPETI(BaseModel):
     valorBeneficio: Optional[float] = Field(None, description="Valor do benefício (R$)")
     ativo: Optional[bool] = Field(None, description="Benefício ativo")
 
-
 class ResumoPETI(BaseModel):
     encontrado: bool = Field(False, description="Se o CPF/NIS possui registros no PETI")
     totalRegistros: int = Field(0, description="Total de registros")
     registros: List[BeneficioPETI] = Field(default_factory=list)
-
-
-# ─── BPC ───────────────────────────────────────────────────────────────────────
 
 class BeneficioBPC(BaseModel):
     nis: Optional[str] = Field(None, description="NIS do beneficiário")
@@ -91,9 +76,6 @@ class ResumoBPC(BaseModel):
     encontrado: bool = Field(False, description="Se o CPF/NIS possui registros no BPC")
     totalRegistros: int = Field(0, description="Total de registros")
     registros: List[BeneficioBPC] = Field(default_factory=list)
-
-
-# ─── Resposta final ────────────────────────────────────────────────────────────
 
 class FonteStatus(BaseModel):
     disponivel: bool

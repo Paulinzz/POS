@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
 import re
 from typing import Optional
 
@@ -23,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def validar_cpf(cpf: str) -> str:
     """Remove formatação e valida estrutura básica do CPF."""
     cpf_limpo = re.sub(r"\D", "", cpf)
@@ -34,14 +32,12 @@ def validar_cpf(cpf: str) -> str:
         )
     return cpf_limpo
 
-
 @app.get("/", tags=["Status"])
 async def root():
     return {
         "status": "online",
         "mensagem": "API Transparência CPF - Consulte /docs para ver os endpoints disponíveis.",
     }
-
 
 @app.get(
     "/consulta/{cpf}",
